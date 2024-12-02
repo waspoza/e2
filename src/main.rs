@@ -6,8 +6,6 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 //use rayon_core;
 
-const BUFSIZE: usize = 8_000_000;
-
 macro_rules! try_posix_fn {
     ($call:expr) => {
         loop {
@@ -25,25 +23,40 @@ macro_rules! try_posix_fn {
     };
 }
 #[derive(Debug)]
-struct SyncPtr(*mut u8);
-unsafe impl Send for SyncPtr {}
-unsafe impl Sync for SyncPtr {}
-impl SyncPtr {
-    fn write(&self, offset: usize, val: u8) {
-        unsafe {
-            *self.0.add(offset) = val;
+struct Arena {
+    buf: Vec<u8>,
+    idx: AtomicUsize,
+}
+unsafe impl Send for Arena {}
+unsafe impl Sync for Arena {}
+impl Arena {
+    fn new(capacity: usize) -> Self {
+        Arena {
+            buf: Vec::<u8>::with_capacity(capacity),
+            idx: AtomicUsize::new(0),
         }
     }
-    fn get(&self) -> *mut u8 {
-        self.0
+    fn alloc(&self, size: usize) -> *const u8 {
+        let old = self.idx.fetch_add(1, Ordering::Relaxed);
+        if old + size > self.buf.capacity() {
+            panic!("alloc size exceeded buf capacity")
+        }
+        unsafe { self.get().add(old) }
+    }
+    fn write(&self, offset: usize, val: u8) {
+        unsafe {
+            let ptr = self.get().add(offset) as *mut u8;
+            *ptr = val;
+        }
+    }
+    fn get(&self) -> *const u8 {
+        self.buf.as_ptr()
     }
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let mut buf = Vec::<u8>::with_capacity(BUFSIZE);
-    let ptr = buf.as_mut_ptr();
-    let idx = AtomicUsize::new(0);
-    let sptr = SyncPtr(ptr);
+
+    let arena = Arena::new(8_000_000);
 
     let path = PathBuf::from("/home/piotr");
     let dirfd = unsafe {
@@ -54,6 +67,7 @@ fn main() -> Result<(), std::io::Error> {
         ))
     };
 
+    let ptr = arena.alloc(1024);
     let res = unsafe { libc::syscall(libc::SYS_getdents64, dirfd, ptr, 1024) };
     let dirent: *const libc::dirent64 = ptr.cast();
 
@@ -72,14 +86,14 @@ fn main() -> Result<(), std::io::Error> {
     dbg!(name);
     println!("{}", n);
 
-    (0..100).into_par_iter().for_each(|_x| {
-        let old = idx.fetch_add(1, Ordering::Relaxed);
+    (0..100).into_par_iter().for_each(|x| {
+        //let old = idx.fetch_add(1, Ordering::Relaxed);
         //let a = aptr.load(Ordering::Relaxed);
         //unsafe {
         //    *a.add(old) = old as u8;
         //}
 
-        sptr.write(old, old as u8);
+        arena.write(x, x as u8);
         //dbg!(&sptr.get());
     });
 
