@@ -15,6 +15,9 @@ macro_rules! try_posix_fn {
             }
 
             let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::NotFound {
+                return Ok(());
+            }
             if error.kind() != io::ErrorKind::Interrupted {
                 return Err(error);
             }
@@ -22,17 +25,18 @@ macro_rules! try_posix_fn {
     };
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct Entry {
     dir: Arc<PathBuf>,
     name: &'static str,
-    date: usize,
+    pub date: usize,
 }
 
 pub fn scandir(
     arena: &atomic::Arena,
     stack: &atomic::Stack<Entry>,
-    dir: Arc<PathBuf>,
+    dir: &Arc<PathBuf>,
 ) -> Result<(), io::Error> {
     let dirfd = unsafe {
         let path = CString::new(dir.as_os_str().as_bytes())?;
@@ -59,7 +63,7 @@ pub fn scandir(
                 return Err(io::Error::from_raw_os_error(error));
             }
         };
-        dbg!(bytes_read);
+        //dbg!(bytes_read);
         if bytes_read == 0 {
             break; // no more entries
         }
@@ -67,22 +71,22 @@ pub fn scandir(
             let dirent: *const libc::dirent64 = unsafe { ptr.add(idx).cast() };
 
             let d_reclen = unsafe { (*dirent).d_reclen as usize };
-            //let name = unsafe { CStr::from_ptr((*dirent).d_name.as_ptr()) };
             let d_name: *const c_char = unsafe { (*dirent).d_name.as_ptr() };
             let namelen = unsafe { libc::strlen(d_name) };
             let slice: &[u8] = unsafe { std::slice::from_raw_parts(d_name.cast(), namelen) };
             let name = unsafe { std::str::from_utf8_unchecked(slice) };
 
-            let entry = Entry {
-                dir: dir.clone(),
-                name,
-                date: 0,
-            };
-            //dbg!(&entry);
-            stack.push(entry);
+            // get only dovecot mail files which fist 10 chars are unix timestamp followed by a dot
+            if matches!(name.chars().nth(10), Some('.')) {
+                let entry = Entry {
+                    dir: dir.clone(),
+                    name,
+                    date: name[0..10].parse().unwrap(),
+                };
+                stack.push(entry);
+            }
 
             idx += d_reclen;
-            dbg!(idx);
             if idx >= bytes_read {
                 break;
             }

@@ -41,6 +41,10 @@ impl Arena {
     fn ptr(&self) -> *const u8 {
         self.buf.as_ptr()
     }
+    #[allow(dead_code)]
+    pub fn allocated(&self) -> usize {
+        self.idx.load(Ordering::Relaxed)
+    }
 }
 
 //#[derive(Debug)]
