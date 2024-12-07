@@ -45,6 +45,10 @@ impl Arena {
     pub fn allocated(&self) -> usize {
         self.idx.load(Ordering::Relaxed)
     }
+    #[allow(dead_code)]
+    pub fn capacity(&self) -> usize {
+        self.buf.capacity()
+    }
 }
 
 //#[derive(Debug)]

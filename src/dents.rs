@@ -28,8 +28,8 @@ macro_rules! try_posix_fn {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub struct Entry {
-    dir: Arc<PathBuf>,
-    name: &'static str,
+    pub dir: Arc<PathBuf>,
+    pub name: &'static str,
     pub date: usize,
 }
 

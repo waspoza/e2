@@ -14,5 +14,7 @@ codegen-units = 1
 
 [dependencies]
 libc = "0.2"
+memchr = "2.7.4"
+memmap2 = "0.9.5"
 rayon = "1.10.0"
 rayon-core = "1.12.1"

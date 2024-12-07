@@ -1,9 +1,11 @@
+use memchr::memmem;
+use memmap2::Mmap;
 use rayon::prelude::*;
+use std::cmp;
 use std::ffi::OsString;
 use std::fs;
 use std::io;
 use std::sync::Arc;
-//use rayon_core;
 
 mod atomic;
 mod dents;
@@ -48,7 +50,7 @@ fn main() -> Result<(), std::io::Error> {
         }
     }
     let needle = needle.to_str().expect("bad search string");
-    dbg!(needle, check_number, print_all);
+
     let homes =
         fs::read_dir("/nexus/dovecot/data/mail/")?.collect::<Result<Vec<_>, io::Error>>()?;
     //let homes = fs::read_dir("/root/docker/dovecot/data/mail/")?.collect::<Result<Vec<_>, io::Error>>()?;
@@ -69,24 +71,50 @@ fn main() -> Result<(), std::io::Error> {
         }
     }
 
-    // let path = Arc::new(PathBuf::from(
-    //     "/nexus/dovecot/data/mail/baza@amnezja.pl/Maildir/new",
-    // ));
-
     maildirs.par_iter().for_each(|dir| {
         let res = dents::scandir(&arena, &stack, &dir);
         assert!(res.is_ok(), "Error in dir: {dir:?} - {res:?}");
     });
 
     let mut files = stack.into_vec();
-    dbg!(files.len(), files.capacity());
-    dbg!(arena.allocated());
+    println!("loaded {} files out of {}", files.len(), files.capacity());
+    println!(
+        "used {} bytes of arena memory out of {}",
+        arena.allocated(),
+        arena.capacity()
+    );
 
     files.par_sort_unstable_by(|a, b| b.date.cmp(&a.date));
 
-    for file in files.iter().take(5) {
-        dbg!(file);
-    }
+    // for file in files.iter().take(5) {
+    //     dbg!(file);
+    // }
+
+    let finder = memmem::Finder::new(needle);
+
+    let _found = files.par_iter().take(check_number).find_any(|entry| {
+        let mut filename = (*entry.dir).clone();
+        filename.push(entry.name);
+        let file = fs::File::open(&filename);
+        assert!(file.is_ok(), "Error in file: {entry:?} - {file:?}");
+        let file = file.unwrap();
+
+        let mmap = unsafe { Mmap::map(&file) };
+        assert!(mmap.is_ok(), "Error in mmap: {mmap:?}");
+        let mmap = mmap.unwrap();
+        let len = cmp::min(mmap.len(), 4096);
+
+        match finder.find(&mmap[..len]) {
+            None => return false,
+            Some(_) => {
+                println!("{}", &filename.to_str().unwrap());
+                if print_all {
+                    return false;
+                }
+                return true;
+            }
+        }
+    });
 
     Ok(())
 }
