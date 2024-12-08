@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 mod atomic;
 mod dents;
+mod email;
 
 const USAGE: &str = "\
 Usage: e [options] search_string
@@ -111,6 +112,8 @@ fn main() -> Result<(), std::io::Error> {
                 if print_all {
                     return false;
                 }
+                email::display(&mmap[..]);
+                println!("\n{}", &filename.to_str().unwrap());
                 return true;
             }
         }

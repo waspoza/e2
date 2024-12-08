@@ -13,8 +13,11 @@ lto = true
 codegen-units = 1
 
 [dependencies]
+htmlescape = "0.3.1"
 libc = "0.2"
+mailparse = "0.15.0"
 memchr = "2.7.4"
 memmap2 = "0.9.5"
 rayon = "1.10.0"
 rayon-core = "1.12.1"
+tl = "0.7.8"
