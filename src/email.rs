@@ -1,4 +1,5 @@
 use mailparse::*;
+
 fn display_email(parsed: ParsedMail) {
     println!("mimetype: {}", parsed.ctype.mimetype);
     if parsed.ctype.mimetype == "text/plain" {
@@ -31,6 +32,10 @@ fn display_email(parsed: ParsedMail) {
             }
         }
     }
+    //println!("Subparts: {}", parsed.subparts.len());
+    for part in parsed.subparts {
+        display_email(part);
+    }
 }
 
 pub fn display(buf: &[u8]) {
@@ -39,10 +44,5 @@ pub fn display(buf: &[u8]) {
     if let Some(s) = subject {
         println!("Subject: {}", s);
     }
-    //display_email(parsed);
-    //println!("Subparts: {}", parsed.subparts.len());
-    //println!("mimetype: {}", parsed.ctype.mimetype);
-    for part in parsed.subparts {
-        display_email(part);
-    }
+    display_email(parsed);
 }
