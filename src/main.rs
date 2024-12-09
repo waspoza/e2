@@ -79,7 +79,7 @@ fn main() -> Result<(), std::io::Error> {
 
     let mut files = stack.into_vec();
     println!(
-        "files: {}/{}, mem: {}/{}",
+        "stack: {}/{}, arena: {}/{}",
         files.len(),
         files.capacity(),
         arena.allocated(),
