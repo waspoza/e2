@@ -78,9 +78,10 @@ fn main() -> Result<(), std::io::Error> {
     });
 
     let mut files = stack.into_vec();
-    println!("loaded {} files out of {}", files.len(), files.capacity());
     println!(
-        "used {} bytes of arena memory out of {}",
+        "files: {}/{}, mem: {}/{}",
+        files.len(),
+        files.capacity(),
         arena.allocated(),
         arena.capacity()
     );
