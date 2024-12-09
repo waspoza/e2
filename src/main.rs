@@ -93,7 +93,8 @@ fn main() -> Result<(), std::io::Error> {
 
     let finder = memmem::Finder::new(needle);
 
-    let _found = files.par_iter().take(check_number).find_any(|entry| {
+    // par_iter is slower here
+    let _found = files.iter().take(check_number).find(|entry| {
         let mut filename = (*entry.dir).clone();
         filename.push(entry.name);
         let file = fs::File::open(&filename);
