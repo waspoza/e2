@@ -55,7 +55,7 @@ fn main() -> Result<(), std::io::Error> {
     //let homes =
     //    fs::read_dir("/nexus/dovecot/data/mail/")?.collect::<Result<Vec<_>, io::Error>>()?;
     let homes =
-        fs::read_dir("/root/docker/dovecot/data/mail/")?.collect::<Result<Vec<_>, io::Error>>()?;
+        fs::read_dir("/srv/dovecot/mail/")?.collect::<Result<Vec<_>, io::Error>>()?;
     let dirs = vec![
         "Maildir/new/",
         "Maildir/cur/",
