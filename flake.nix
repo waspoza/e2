@@ -27,6 +27,8 @@
             lockFile = ./Cargo.lock;
           };
 
+          doCheck = false; # speed thing up by avoiding second build
+
           meta = with pkgs.lib; {
             description = "Search for text inside emails";
             mainProgram = "e";
