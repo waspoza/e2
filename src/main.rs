@@ -16,8 +16,9 @@ Usage: e [options] search_string
 
 Options:
 
--a          Display all occurences.
+-a          Display all occurences (don't stop after first).
 -c number   Number of emails to search. (default: 300)
+-h          This help screen.
 ";
 
 fn main() -> Result<(), std::io::Error> {
@@ -47,8 +48,12 @@ fn main() -> Result<(), std::io::Error> {
                 return Ok(());
             }
 
-            _ => needle = arg.to_owned(),
+            _ => needle = arg,
         }
+    }
+    if needle == OsString::default() {
+        eprint!("{}", USAGE);
+        return Ok(());
     }
     let needle = needle.to_str().expect("bad search string");
 
