@@ -23,7 +23,7 @@ Options:
 
 fn main() -> Result<(), std::io::Error> {
     let arena = atomic::Arena::new(8_000_000);
-    let stack = atomic::Stack::<dents::Entry>::new(50_000);
+    let stack = atomic::Stack::<dents::Entry>::new(70_000);
 
     let mut print_all = false; // dont stop searching after first find
     let mut check_number = 300; // how many newest emails to search
